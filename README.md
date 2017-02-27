@@ -12,7 +12,7 @@ to find your server.
 
 ### General Goals
 - enable the outlet to remain "smart" if the server goes offline (the outlet already remembers configured timers, but it would lose the ability to be turned on/off or configured.)  
-- watch and validate the network traffic between the outlet and some strange server (block unrecognized traffic over the websocket by default. /upgrade is technically recognizde, but still blocked.)  
+- watch and validate the network traffic between the outlet and some strange server (block unrecognized traffic over the websocket by default. /upgrade is technically recognized, but still blocked.)  
 - enable integration of the outlet with other environments. The service port can be targeted with IFTTT's Maker channel to take actions, and that concept can be extended further.
 
 ### Non-goals
