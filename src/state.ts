@@ -67,8 +67,8 @@ const messageSchemas = {
     },
     "report": {
         "uri": "string",
-        "e": "string",
-        "t": "string"
+        "e": "string", // This is likely to be a measure of energy used
+        "t": "string"  // This is likely to be a measure of time during which the energy was used
     },
     "gettriggercount": {
         "uri": "string",
@@ -216,7 +216,7 @@ class DeviceState extends events.EventEmitter {
                 case "/kr": // pong
                     validated = this.validateMessage(json, "kr"); // doesn't actually have any fields. that's okay.
                     break;
-                case "/report": // no idea what's in here
+                case "/report": // probably a snapshot of energy consumption over a time period
                     validated = this.validateMessage(json, "report");
                     break;
                 case "/evtimer": // a timer triggered
