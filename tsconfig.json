@@ -1,0 +1,19 @@
+{
+    "compilerOptions": {
+        "module": "commonjs",
+	    "moduleResolution": "node",
+        "target": "es6",
+        "noImplicitAny": false,
+        "sourceMap": false,
+    	"lib": ["es6"],
+        "outDir": "dist"
+    },
+    "exclude": [
+        "node_modules"
+    ],
+    "files": [
+        "src/server.ts",
+        "src/state.ts",
+        "typings/index.d.ts"
+    ]
+}

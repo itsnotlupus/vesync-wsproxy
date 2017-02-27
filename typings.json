@@ -1,0 +1,12 @@
+{
+  "name": "wsproxy",
+  "dependencies": {
+    "express": "registry:npm/express#4.14.0+20170217205433",
+    "morgan": "registry:dt/morgan#1.7.0+20160726064905",
+    "winston": "registry:dt/winston#2.2.0+20170106144044",
+    "ws": "registry:dt/ws#0.0.0+20170123022058"
+  },
+  "globalDependencies": {
+    "node": "registry:dt/node#7.0.0+20170204020307"
+  }
+}

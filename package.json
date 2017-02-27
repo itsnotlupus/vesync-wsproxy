@@ -1,0 +1,26 @@
+{
+  "name": "wsproxy",
+  "version": "0.0.0",
+  "description": "test websocket proxy",
+  "main": "src/server.ts",
+  "dependencies": {
+    "commander": "^2.9.0",
+    "express": "^4.14.1",
+    "morgan": "^1.8.1",
+    "winston": "^2.3.1",
+    "ws": "^2.1.0"
+  },
+  "devDependencies": {
+    "nodemon": "^1.11.0",
+    "ts-node": "^2.1.0",
+    "typescript": "^2.2.1"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "npm run build:live",
+    "build:live": "nodemon --exec ./node_modules/.bin/ts-node -- src/server.ts",
+    "postinstall": "typings install"
+  },
+  "author": "",
+  "license": "Private"
+}
