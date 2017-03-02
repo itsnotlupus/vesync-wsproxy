@@ -1,0 +1,15 @@
+{
+  "outlets": {
+    "frontporch": {
+      "id": "3f4e2c68-7aaf-41cd-99c9-c703710a0b83"
+    },
+    "hall": {
+      "id": "b04bbfc4-b0a7-4624-a192-c254da23f26d"
+    }
+  },
+  "labels": {
+    "^front porch( lights?)?^": [ "frontporch" ],
+    "^hall( lights?|lamps?)^": [ "hall" ],
+    "^(all the )?lights?$": [ "frontporch", "hall" ]
+  }
+}

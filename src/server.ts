@@ -15,6 +15,8 @@ import express = require('express');
 import DeviceState = require('./state');
 import winston = require('winston');
 
+const config = require('../config.json');
+
 const LOCAL_PORT = 17273; // port for the local websocket server
 const LOCAL_PATH = "/gnws";
 
@@ -64,11 +66,19 @@ function startWebsocketProxy(localPort: number, localPath: string, remoteUrl: st
                 logger.warn("no login seen after 2 seconds. killing websocket.");
                 cleanup();
             }
-        },2000); // 2 seconds to see a login packet, else we bail.
+        }, 2000); // 2 seconds to see a login packet, else we bail.
         local_ws.on('message', function(message: string) {
             if (!state) {
                 // must be a login message.
                 state = DeviceState.getDeviceStateByLogin(message);
+                state.setInjector({
+                    sendToDevice: (json) => {
+                        local_ws.send(JSON.stringify(json));
+                    },
+                    sendToCloud: (json) => {
+                        remote_ws.send(JSON.stringify(json));
+                    }
+                })
             }
             message = state.handleDeviceMessage(message);
             if (message) {
@@ -81,17 +91,9 @@ function startWebsocketProxy(localPort: number, localPath: string, remoteUrl: st
         }).on('close', cleanup).on('error', cleanup);
 
         // open connection to other side
-        var remote_ws = new WebSocket(remoteUrl, {});
+        const remote_ws = new WebSocket(remoteUrl, {});
         remote_ws.on('open', function(){
             logger.info("Cloud connected.");
-            state.setInjector({
-                sendToDevice: (json) => {
-                    local_ws.send(JSON.stringify(json));
-                },
-                sendToCloud: (json) => {
-                    remote_ws.send(JSON.stringify(json));
-                }
-            })
             // flush buffer
             while (buffer.length){
                 remote_ws.send(buffer.shift());
@@ -125,36 +127,32 @@ function startWebsocketProxy(localPort: number, localPath: string, remoteUrl: st
 function startWebService(servicePort: number) {
     const app = express();
 
-    // GET is very much the wrong verb for this, but it's so easy to test with.
-    // also, some kind of AUTH might be handy here..
-    app.get('/relay', function (req: express.Request, res: express.Response) {
-        const id = req.query.id;
-        const on = req.query.on==="1";
-        // grab a DeviceState object
+    function stringParam(req: express.Request, name: string, minSize: number =0, maxSize: number = 1000) {
+        const value = req.query[name];
+        if (value.length>=minSize || value.length<=maxSize) {
+            return value;
+        } 
+    }
+
+    function setRelayState(id: string, relay: "open"|"break") {
         const state = DeviceState.getDeviceStateById(id);
-        const relay = on?"open":"break";
         state.injectRelay(relay);
-        res.send("OK. relay="+relay);
-    });
-    app.get('/power', function (req: express.Request, res:express.Response) {
-        const id = req.query.id;
+    }
+    function getPower(id: string, callback: Function) {
         const state = DeviceState.getDeviceStateById(id);
         state.once("power", () => {
             const power_tmp = state.energy.power.split(":").map((s)=>parseInt(s,16));
             const power = (power_tmp[0]+power_tmp[1])/8192; // XXX probably not quite right.
             const voltage_tmp = state.energy.voltage.split(":").map((s)=>parseInt(s,16));
             const voltage = (voltage_tmp[0]+voltage_tmp[1])/8192; // XXX same issue
-            res.send({relay: state.state.relay, watts: power, volts: voltage});
+            callback({relay: state.state.relay, watts: power, volts: voltage});
         });
         state.injectGetRuntime();
-    });
-    // open relay IF it's night time, for 2 minutes.
-    // If it was already open, do nothing.
-    app.get('/nightlight', function (req:express.Request, res: express.Response) {
-        const id = req.query.id;
+    }
+    function enableNightlight(id: string) {
         const time = new Date();
         const state = DeviceState.getDeviceStateById(id);
-        if (time.getHours() > 19 || time.getHours()<7) { // night between 7pm and 7am. deal.
+        if (time.getHours() > 18 || time.getHours()<9) { // night between 6pm and 9am. deal.
             if (state.state.relay !== "open") {
                 state.injectRelay("open");
                 setTimeout(() => {
@@ -162,7 +160,78 @@ function startWebService(servicePort: number) {
                 }, 2*60*1000);
             }
         }
+    }
+    let matchers: { regex: RegExp, names: string[] }[];
+    function parseTextIntoNames(text: string): string[] {
+        let label = text.trim().toLowerCase();
+        if (label.startsWith("the ")) {
+            label = label.slice(4);
+        }
+        if (!matchers) {
+            // parse labels once.
+            matchers = [];
+            Object.keys(config.labels).forEach((incantation)=> {
+                const regex = new RegExp(incantation, "i");
+                matchers.push({ regex, names: config.labels[incantation] });
+            });
+        }
+        let names: string[] = [];
+        matchers.some(matcher => {
+            if (label.match(matcher.regex)) {
+                names = matcher.names;
+                return true;
+            }
+        });
+        return names;
+    }
+
+    // GET is very much the wrong verb for this, but it's so easy to test with.
+    // also, some kind of AUTH might be handy here..
+
+    // flip a relay on or off by guid or by friendly name, as defined in config
+    app.get('/relay', function (req: express.Request, res: express.Response) {
+        const name = stringParam(req, "name");
+        const id = config.outlets[name].id || stringParam(req, "id", 5, 40);
+        const on = stringParam(req, "on", 1, 1)==="1";
+        // grab a DeviceState object
+        const relay = on?"open":"break";
+        setRelayState(id, relay);
+        res.send("OK. relay="+relay);
+    });
+    // get instant power readout for an outlet, by guid or by friendly name
+    app.get('/power', function (req: express.Request, res:express.Response) {
+        const name = stringParam(req, "name");
+        const id = config.outlets[name].id || stringParam(req, "id", 5, 40);
+        getPower(id, (json) => res.send(json));
+    });
+    // open relay IF it's night time, for 2 minutes.
+    // If it was already open, do nothing.
+    app.get('/nightlight', function (req:express.Request, res: express.Response) {
+        const name = stringParam(req, "name");
+        const id = config.outlets[name].id || stringParam(req, "id", 5, 40);
+        enableNightlight(id);
         res.send("OK, whatever.");
+    });
+    // open all the known outlets if it's night time, for 2 minutes
+    app.get('/nightlights', function (req:express.Request, res: express.Response) {
+        Object.keys(config.outlets).forEach((name: string)=> {
+            const id = config.outlets[name].id;
+            enableNightlight(id);
+        });
+        res.send("Yeah ok.");
+    });
+    // cheapo regex-powered NLP to map some text to some relays to flip on or off.
+    app.get('/natural', function (req:express.Request, res:express.Response) {
+        const text = stringParam(req, "text");
+        const names = parseTextIntoNames(text);
+        const on = stringParam(req, "on", 1, 1)==="1";
+        const relay = on?"open":"break";
+        console.log("/natural: text=", text, "mapped to", names);
+        names.forEach((name) => {
+            const id = config.outlets[name].id;
+            setRelayState(id, relay);
+        });
+        res.send("ooh look at me, I'm sooo smart.");
     });
 
     // logger stuff

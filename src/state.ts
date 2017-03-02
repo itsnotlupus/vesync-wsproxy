@@ -137,6 +137,10 @@ const messageSchemas = {
     "state": {
         "uri": "string",
         "relay": "string"
+    },
+    "trigger": { // device fires "triggered actions" (max power and min power)
+        "uri": "string",
+        "type": "number"
     }
 };
 
@@ -152,9 +156,9 @@ class DeviceState extends events.EventEmitter {
     private static states: { [id:string]: DeviceState } = {};
     public static getDeviceStateByLogin(loginMessage: string) {
         const json = JSON.parse(loginMessage);
-        return DeviceState.getDeviceStateById(json.id);
+        return DeviceState.getDeviceStateById(json.id, true);
     }
-    public static getDeviceStateById(id: string) {
+    public static getDeviceStateById(id: string, create:boolean = false) {
         if (!DeviceState.states[id]) {
             DeviceState.states[id] = new DeviceState();
         }
@@ -248,6 +252,9 @@ class DeviceState extends events.EventEmitter {
                     validated = this.validateMessage(json, "state");
                     this.state.relay = json.relay;
                     this.emit("relay");
+                    break;
+                case "/trigger": // maybe related to /evtimer, except different. and with less details.
+                    validated = this.validateMessage(json, "trigger");
                     break;
 
                 // other URIs I should expect to pop out of this device include

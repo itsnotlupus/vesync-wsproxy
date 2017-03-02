@@ -63,6 +63,14 @@ function startWebsocketProxy(localPort, localPath, remoteUrl) {
             if (!state) {
                 // must be a login message.
                 state = DeviceState.getDeviceStateByLogin(message);
+                state.setInjector({
+                    sendToDevice: (json) => {
+                        local_ws.send(JSON.stringify(json));
+                    },
+                    sendToCloud: (json) => {
+                        remote_ws.send(JSON.stringify(json));
+                    }
+                });
             }
             message = state.handleDeviceMessage(message);
             if (message) {
@@ -75,17 +83,9 @@ function startWebsocketProxy(localPort, localPath, remoteUrl) {
             }
         }).on('close', cleanup).on('error', cleanup);
         // open connection to other side
-        var remote_ws = new WebSocket(remoteUrl, {});
+        const remote_ws = new WebSocket(remoteUrl, {});
         remote_ws.on('open', function () {
             logger.info("Cloud connected.");
-            state.setInjector({
-                sendToDevice: (json) => {
-                    local_ws.send(JSON.stringify(json));
-                },
-                sendToCloud: (json) => {
-                    remote_ws.send(JSON.stringify(json));
-                }
-            });
             // flush buffer
             while (buffer.length) {
                 remote_ws.send(buffer.shift());
@@ -122,11 +122,17 @@ function startWebsocketProxy(localPort, localPath, remoteUrl) {
 // basic web service
 function startWebService(servicePort) {
     const app = express();
+    function stringParam(req, name, minSize = 0, maxSize = 1000) {
+        const value = req.query[name];
+        if (value.length >= minSize || value.length <= maxSize) {
+            return value;
+        }
+    }
     // GET is very much the wrong verb for this, but it's so easy to test with.
     // also, some kind of AUTH might be handy here..
     app.get('/relay', function (req, res) {
-        const id = req.query.id;
-        const on = req.query.on === "1";
+        const id = stringParam(req, "id", 5, 40);
+        const on = stringParam(req, "on", 1, 1);
         // grab a DeviceState object
         const state = DeviceState.getDeviceStateById(id);
         const relay = on ? "open" : "break";
@@ -134,7 +140,8 @@ function startWebService(servicePort) {
         res.send("OK. relay=" + relay);
     });
     app.get('/power', function (req, res) {
-        const id = req.query.id;
+        const id = stringParam(req, "id", 5, 40);
+        ;
         const state = DeviceState.getDeviceStateById(id);
         state.once("power", () => {
             const power_tmp = state.energy.power.split(":").map((s) => parseInt(s, 16));
@@ -148,7 +155,7 @@ function startWebService(servicePort) {
     // open relay IF it's night time, for 2 minutes.
     // If it was already open, do nothing.
     app.get('/nightlight', function (req, res) {
-        const id = req.query.id;
+        const id = stringParam(req, "id", 5, 40);
         const time = new Date();
         const state = DeviceState.getDeviceStateById(id);
         if (time.getHours() > 19 || time.getHours() < 7) {

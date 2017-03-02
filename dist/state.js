@@ -50,7 +50,7 @@ const messageSchemas = {
     "report": {
         "uri": "string",
         "e": "string",
-        "t": "string"
+        "t": "string" // This is likely to be a measure of time during which the energy was used
     },
     "gettriggercount": {
         "uri": "string",
@@ -119,6 +119,10 @@ const messageSchemas = {
     "state": {
         "uri": "string",
         "relay": "string"
+    },
+    "trigger": {
+        "uri": "string",
+        "type": "number"
     }
 };
 let logger;
@@ -136,9 +140,9 @@ class DeviceState extends events.EventEmitter {
     }
     static getDeviceStateByLogin(loginMessage) {
         const json = JSON.parse(loginMessage);
-        return DeviceState.getDeviceStateById(json.id);
+        return DeviceState.getDeviceStateById(json.id, true);
     }
-    static getDeviceStateById(id) {
+    static getDeviceStateById(id, create = false) {
         if (!DeviceState.states[id]) {
             DeviceState.states[id] = new DeviceState();
         }
@@ -217,6 +221,9 @@ class DeviceState extends events.EventEmitter {
                     validated = this.validateMessage(json, "state");
                     this.state.relay = json.relay;
                     this.emit("relay");
+                    break;
+                case "/trigger":
+                    validated = this.validateMessage(json, "trigger");
                     break;
                 // other URIs I should expect to pop out of this device include
                 // "/assignGuid",
