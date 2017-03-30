@@ -67,8 +67,8 @@ const messageSchemas = {
     },
     "report": {
         "uri": "string",
-        "e": "string", // This is likely to be a measure of energy used
-        "t": "string"  // This is likely to be a measure of time during which the energy was used
+        "e": "string", // Watt*seconds (e/t = average Watts for the report period.)
+        "t": "string"  // Seconds since (relay opened or last report), which is generally right around 180 seconds.
     },
     "gettriggercount": {
         "uri": "string",
@@ -158,6 +158,7 @@ class DeviceState extends events.EventEmitter {
         const json = JSON.parse(loginMessage);
         return DeviceState.getDeviceStateById(json.id, true);
     }
+    // 
     public static getDeviceStateById(id: string, create:boolean = false) {
         if (!DeviceState.states[id]) {
             DeviceState.states[id] = new DeviceState();

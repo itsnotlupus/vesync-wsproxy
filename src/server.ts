@@ -189,7 +189,7 @@ function startWebService(servicePort: number) {
     // also, some kind of AUTH might be handy here..
 
     // flip a relay on or off by guid or by friendly name, as defined in config
-    app.get('/relay', function (req: express.Request, res: express.Response) {
+    app.all('/api/relay', function (req: express.Request, res: express.Response) {
         const name = stringParam(req, "name");
         const id = config.outlets[name].id || stringParam(req, "id", 5, 40);
         const on = stringParam(req, "on", 1, 1)==="1";
@@ -199,21 +199,21 @@ function startWebService(servicePort: number) {
         res.send("OK. relay="+relay);
     });
     // get instant power readout for an outlet, by guid or by friendly name
-    app.get('/power', function (req: express.Request, res:express.Response) {
+    app.all('/api/power', function (req: express.Request, res:express.Response) {
         const name = stringParam(req, "name");
         const id = config.outlets[name].id || stringParam(req, "id", 5, 40);
         getPower(id, (json) => res.send(json));
     });
     // open relay IF it's night time, for 2 minutes.
     // If it was already open, do nothing.
-    app.get('/nightlight', function (req:express.Request, res: express.Response) {
+    app.all('/api/nightlight', function (req:express.Request, res: express.Response) {
         const name = stringParam(req, "name");
         const id = config.outlets[name].id || stringParam(req, "id", 5, 40);
         enableNightlight(id);
         res.send("OK, whatever.");
     });
     // open all the known outlets if it's night time, for 2 minutes
-    app.get('/nightlights', function (req:express.Request, res: express.Response) {
+    app.all('/api/nightlights', function (req:express.Request, res: express.Response) {
         Object.keys(config.outlets).forEach((name: string)=> {
             const id = config.outlets[name].id;
             enableNightlight(id);
@@ -221,7 +221,7 @@ function startWebService(servicePort: number) {
         res.send("Yeah ok.");
     });
     // cheapo regex-powered NLP to map some text to some relays to flip on or off.
-    app.get('/natural', function (req:express.Request, res:express.Response) {
+    app.all('/api/natural', function (req:express.Request, res:express.Response) {
         const text = stringParam(req, "text");
         const names = parseTextIntoNames(text);
         const on = stringParam(req, "on", 1, 1)==="1";
