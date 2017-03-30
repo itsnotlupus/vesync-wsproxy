@@ -10,17 +10,17 @@ You'll then need to make sure your server is still able to resolve server2.vesyn
 Once that's done and your proxy is running, you may need to power cycle the outlet to encourage it 
 to find your server.
 
-### Generally, this has a few vague goals:
+### General Goals
 - enable the outlet to remain "smart" if the server goes offline (the outlet already remembers configured timers, but it would lose the ability to be turned on/off or configured.)  
-- watch and validate the network traffic between the outlet and some strange server (block unrecognized traffic over the websocket by default. /upgrade is technically recognize, but still blocked.)  
-- enable integration of the outlet with other environments. The service port can be targeted with IFTTT's Maker channel to take actions, and that concept can probably be extended quite a bit.
+- watch and validate the network traffic between the outlet and some strange server (block unrecognized traffic over the websocket by default. /upgrade is technically recognized, but still blocked.)  
+- enable integration of the outlet with other environments. The service port can be targeted with IFTTT's Maker channel to take actions, and that concept can be extended further.
 
-### Non-goals so far:
+### Non-goals
 - replace the mobile app. Yes, it's a quirky app, but I don't really see myself committing to rewrite the whole thing.  
 - develop custom firmwares. This proxy allows to spoof an /upgrade packet which will trigger an OTA firmware update. But without some other way to reset the firmware, this is likely to result in a brick. No go for now.  
 ( However this is really just an ESP8266 shaped like a plug. There are whole communities of people that write firmware for this stuff out there.)
 
-### Other Random Notes
+### Miscellaneous Random Notes
 
 - 5 seconds push => solid blue light = airkiss/esptouch/whatever mode  
   -> in this mode, the device sniffs UDP packets sent to (its own, or some agreed upon) BSSID, and derive a data stream from UDP packet lengths, presumably  
