@@ -1,9 +1,7 @@
 FROM node:carbon-alpine
 
 RUN apk update && apk upgrade && \
-    apk add --no-cache drill git && \
-    drill server2.vesync.com. @8.8.8.8 \
-	| awk '/^server2.vesync.com/{print $NF " " $1}' >>/etc/hosts
+    apk add --no-cache drill git
 
 USER node
 RUN mkdir /home/node/app
@@ -15,4 +13,4 @@ RUN mkdir logs && ln -s /dev/stdout ./logs/server.log && \
     npm install -q
 
 EXPOSE 16522 17273
-CMD [ "npm", "run", "build:live" ]
+CMD [ "sh", "-c", "REMOTE_IP=$(drill server2.vesync.com. @8.8.8.8 | awk '/^server2.vesync.com/{print $NF \" \" $1}') npm run build:live" ]

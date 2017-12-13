@@ -25,7 +25,8 @@ const LOCAL_PATH = "/gnws";
 // ws://server2.vesync.com:17275/gnwss // doesn't seem to be setup
 // ws://server2.vesync.com:17273/gnws
 
-const REMOTE_URL = "ws://server2.vesync.com:17273/gnws";
+//const REMOTE_URL = "ws://server2.vesync.com:17273/gnws";
+const REMOTE_URL = "ws://" + process.env.REMOTE_IP + ":17273/gnws";
 const SERVICE_PORT = 16522; // port for the web service
 
 // logger stuff
