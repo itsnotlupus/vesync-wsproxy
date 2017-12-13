@@ -1,6 +1,7 @@
 *~
 *.swp
-node_modules/
-typings/
+/node_modules
+/typings
 .vscode
 config.json
+/state
