@@ -71,6 +71,7 @@ function startWebsocketProxy(localPort: number, localPath: string, remoteUrl: st
         local_ws.on('message', function(message: string) {
             if (!state) {
                 // must be a login message.
+		logger.info("loginmessage: ", message);
                 state = DeviceState.getDeviceStateByLogin(message);
                 state.setInjector({
                     sendToDevice: (json) => {
@@ -269,4 +270,5 @@ function startWebService(servicePort: number) {
 startWebsocketProxy(LOCAL_PORT, LOCAL_PATH, REMOTE_URL);
 startWebService(SERVICE_PORT);
 
+logger.info("REMOTE_URL: ", REMOTE_URL);
 logger.info("Server started");
