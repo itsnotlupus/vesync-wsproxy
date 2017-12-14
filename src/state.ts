@@ -10,9 +10,6 @@
 import events = require("events");
 import winston = require('winston');
 
-const { StringDecoder } = require('string_decoder');
-const decoder = new StringDecoder('base64');
-
 
 interface DeviceStateData {
     account: string; // the vesync account managed through the mobile app
@@ -159,10 +156,21 @@ class DeviceState extends events.EventEmitter {
     // factory pattern. #sorrynotsorry.
     private static states: { [id:string]: DeviceState } = {};
     public static getDeviceStateByLogin(loginMessage: string) {
-	const m = decoder.write(loginMessage)
-	logger.info(m);
-        const json = JSON.parse(m);
-        return DeviceState.getDeviceStateById(json.id, true);
+	try {
+	    const json = JSON.parse(loginMessage);
+	    return DeviceState.getDeviceStateById(json.id, true);
+	} 
+	catch (e) {
+            const encoding = 'base64';
+	    const { StringDecoder } = require('string_decoder');
+	    const decoder = new StringDecoder(encoding);
+            logger.debug("Failed to parse loginMessage, corrupt or encrypted?");
+	    logger.debug("loginMessage:", encoding, loginMessage);
+	    const loginMessageDecoded = decoder.write(loginMessage);
+	    logger.debug("loginMessageDecoded:", loginMessageDecoded);
+            // Not sure what to do with the exception, but throwing matches prior behavior
+            throw e;
+        }
     }
     // 
     public static getDeviceStateById(id: string, create:boolean = false) {
