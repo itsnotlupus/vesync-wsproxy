@@ -161,14 +161,13 @@ class DeviceState extends events.EventEmitter {
 	    return DeviceState.getDeviceStateById(json.id, true);
 	} 
 	catch (e) {
-            const encoding = 'base64';
+            const encoding = 'hex';
 	    const { StringDecoder } = require('string_decoder');
 	    const decoder = new StringDecoder(encoding);
-            logger.debug("Failed to parse loginMessage, corrupt or encrypted?");
-	    logger.debug("loginMessage:", encoding, loginMessage);
+            logger.debug("Failed to parse loginMessage", loginMessage);
 	    const loginMessageDecoded = decoder.write(loginMessage);
 	    logger.debug("loginMessageDecoded:", loginMessageDecoded);
-            // Not sure what to do with the exception, but throwing matches prior behavior
+
             throw e;
         }
     }
