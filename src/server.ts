@@ -25,7 +25,9 @@ const LOCAL_PATH = "/gnws";
 // ws://server2.vesync.com:17275/gnwss // doesn't seem to be setup
 // ws://server2.vesync.com:17273/gnws
 
-const REMOTE_URL = "ws://server2.vesync.com:17273/gnws";
+const REMOTE_IP = process.env.REMOTE_IP; 
+const REMOTE_HOST = (!REMOTE_IP) ? "server2.vesync.com" : REMOTE_IP;
+const REMOTE_URL = "ws://" + REMOTE_HOST + ":17273/gnws";
 const SERVICE_PORT = 16522; // port for the web service
 
 // logger stuff
@@ -70,6 +72,7 @@ function startWebsocketProxy(localPort: number, localPath: string, remoteUrl: st
         local_ws.on('message', function(message: string) {
             if (!state) {
                 // must be a login message.
+		logger.info("loginmessage: ", message);
                 state = DeviceState.getDeviceStateByLogin(message);
                 state.setInjector({
                     sendToDevice: (json) => {
@@ -268,4 +271,4 @@ function startWebService(servicePort: number) {
 startWebsocketProxy(LOCAL_PORT, LOCAL_PATH, REMOTE_URL);
 startWebService(SERVICE_PORT);
 
-logger.info("Server started");
+logger.info("Proxy server started for", REMOTE_URL);

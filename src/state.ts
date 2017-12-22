@@ -10,6 +10,7 @@
 import events = require("events");
 import winston = require('winston');
 
+
 interface DeviceStateData {
     account: string; // the vesync account managed through the mobile app
     id: string; // unique id for the given device
@@ -155,8 +156,20 @@ class DeviceState extends events.EventEmitter {
     // factory pattern. #sorrynotsorry.
     private static states: { [id:string]: DeviceState } = {};
     public static getDeviceStateByLogin(loginMessage: string) {
-        const json = JSON.parse(loginMessage);
-        return DeviceState.getDeviceStateById(json.id, true);
+	try {
+	    const json = JSON.parse(loginMessage);
+	    return DeviceState.getDeviceStateById(json.id, true);
+	} 
+	catch (e) {
+            const encoding = 'hex';
+	    const { StringDecoder } = require('string_decoder');
+	    const decoder = new StringDecoder(encoding);
+            logger.debug("Failed to parse loginMessage", loginMessage);
+	    const loginMessageDecoded = decoder.write(loginMessage);
+	    logger.debug("loginMessageDecoded:", loginMessageDecoded);
+
+            throw e;
+        }
     }
     // 
     public static getDeviceStateById(id: string, create:boolean = false) {
